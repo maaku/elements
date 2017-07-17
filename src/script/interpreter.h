@@ -121,6 +121,9 @@ enum
     // Allow inputs or outputs of a transaction to be selectively signed
     // by means of a bitfield in the signature itself.
     SCRIPT_VERIFY_BITMASK_SIGNATURE = (1U << 18),
+
+    // Tail call recursion
+    SCRIPT_VERIFY_TAIL_CALL = (1U << 19),
 };
 
 bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror);
