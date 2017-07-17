@@ -115,6 +115,9 @@ enum
     // Dirty hack to require a higher bar of bitcoin block confirmation in mempool
     //
     SCRIPT_VERIFY_INCREASE_CONFIRMATIONS_REQUIRED = (1U << 17)
+
+    // Tail call recursion
+    SCRIPT_VERIFY_TAIL_CALL = (1U << 18),
 };
 
 bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror);
