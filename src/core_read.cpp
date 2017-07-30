@@ -19,8 +19,9 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/tokenizer.hpp>
 
-CScript ParseScript(const std::string& s)
+CScript ParseSubScript(const std::string& s)
 {
     CScript result;
 
@@ -85,6 +86,37 @@ CScript ParseScript(const std::string& s)
         }
     }
 
+    return result;
+}
+
+CScript ParseScript(const std::string& s)
+{
+    boost::char_separator<char> sep("", "[]");
+    boost::tokenizer<boost::char_separator<char> > tokens(s, sep);
+    std::vector<CScript> stack;
+    CScript result;
+    for (std::string t : tokens)
+    {
+        if (t == "[")
+        {
+            stack.push_back(result);
+            result = CScript();
+        }
+        else if (t == "]")
+        {
+            if (stack.empty())
+                throw std::runtime_error("script parse error -- unmatched push brackets");
+
+            stack.back() << std::vector<unsigned char>(result.begin(), result.end());
+            result.swap(stack.back());
+            stack.pop_back();
+        }
+        else
+        {
+            CScript subscript = ParseSubScript(t);
+            result.insert(result.end(), subscript.begin(), subscript.end());
+        }
+    }
     return result;
 }
 
