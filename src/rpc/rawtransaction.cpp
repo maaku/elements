@@ -1085,6 +1085,26 @@ UniValue decoderawtransaction(const JSONRPCRequest& request)
     return result;
 }
 
+UniValue compilescript(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw runtime_error(
+            "compilescript \"code\"\n"
+            "\nConvert a textual representation of bitcoin script into a hex "
+            "string, suitable for use in the raw transaction APIs."
+        );
+
+    RPCTypeCheck(request.params, boost::assign::list_of(UniValue::VSTR));
+
+    CScript script = ParseScript(request.params[0].get_str());
+
+    UniValue r(UniValue::VOBJ);
+    r.push_back(Pair("hex", HexStr(script.begin(), script.end())));
+    r.push_back(Pair("length", (int64_t)script.size()));
+    ScriptPubKeyToJSON(script, r, false);
+    return r;
+}
+
 UniValue decodescript(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
@@ -1598,6 +1618,7 @@ static const CRPCCommand commands[] =
     { "rawtransactions",    "getrawtransaction",      &getrawtransaction,      true,  {"txid","verbose"} },
     { "rawtransactions",    "createrawtransaction",   &createrawtransaction,   true,  {"inputs","outputs","locktime"} },
     { "rawtransactions",    "decoderawtransaction",   &decoderawtransaction,   true,  {"hexstring"} },
+    { "rawtransactions",    "compilescript",          &compilescript,          true,  {"code"} },
     { "rawtransactions",    "decodescript",           &decodescript,           true,  {"hexstring"} },
     { "rawtransactions",    "sendrawtransaction",     &sendrawtransaction,     false, {"hexstring","allowhighfees"} },
     { "rawtransactions",    "signrawtransaction",     &signrawtransaction,     false, {"hexstring","prevtxs","privkeys","sighashtype"} }, /* uses wallet if enabled */
