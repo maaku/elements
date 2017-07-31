@@ -595,6 +595,50 @@ UniValue createrawtransaction(const JSONRPCRequest& request)
     return EncodeHexTx(rawTx);
 }
 
+UniValue insertscriptsig(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 3)
+        throw runtime_error(
+            "insertscriptsig \"tx\" index \"scriptSig\"\n"
+
+            "\nReplaces the scriptSig of the specified input with the serialized string. "
+            "Fails if scriptWitness is not-null.\n"
+
+            "\nArguments:\n"
+            "1. \"tx\"         (string, required) The hex string of the raw transaction.\n"
+            "2. index        (integer, required) The position of the index to be modified.\n"
+            "3. \"scriptSig\"  (string, required) The scriptSig to insert.\n"
+
+            "\nResult:\n"
+            "\"hex\"           (string) The modified transaction hash in hex.\n"
+        );
+
+    RPCTypeCheck(request.params, boost::assign::list_of
+        (UniValue::VSTR)
+        (UniValue::VNUM)
+        (UniValue::VSTR)
+    );
+
+    // parse hex string from parameter
+    CMutableTransaction rawTx;
+    if (!DecodeHexTx(rawTx, request.params[0].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    int nIn = request.params[1].get_int();
+    if (nIn < 0 || (size_t)nIn >= rawTx.vin.size())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "input index out of range");
+    if (rawTx.wit.vtxinwit.size() > (size_t)nIn && !rawTx.wit.vtxinwit[nIn].IsNull())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "input has witness when trying to add scriptSig");
+
+    if (!IsHex(request.params[2].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "script decode failed");
+
+    std::vector<unsigned char> vchScript = ParseHexV(request.params[2], "scriptsig");
+    rawTx.vin[nIn].scriptSig = CScript(vchScript.begin(), vchScript.end());
+
+    return EncodeHexTx(rawTx);
+}
+
 // Rewind the outputs to unblinded, and push placeholders for blinding info
 void FillBlinds(CMutableTransaction& tx, bool fUseWallet, std::vector<uint256>& output_value_blinds, std::vector<uint256>& output_asset_blinds, std::vector<CPubKey>& output_pubkeys, std::vector<CKey>& asset_keys, std::vector<CKey>& token_keys) {
     for (size_t nOut = 0; nOut < tx.vout.size(); nOut++) {
@@ -1617,6 +1661,7 @@ static const CRPCCommand commands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     { "rawtransactions",    "getrawtransaction",      &getrawtransaction,      true,  {"txid","verbose"} },
     { "rawtransactions",    "createrawtransaction",   &createrawtransaction,   true,  {"inputs","outputs","locktime"} },
+    { "rawtransactions",    "insertscriptsig",        &insertscriptsig,        true,  {"tx","index","script"} },
     { "rawtransactions",    "decoderawtransaction",   &decoderawtransaction,   true,  {"hexstring"} },
     { "rawtransactions",    "compilescript",          &compilescript,          true,  {"code"} },
     { "rawtransactions",    "decodescript",           &decodescript,           true,  {"hexstring"} },
