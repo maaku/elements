@@ -121,7 +121,7 @@ static void MerkleComputation(const std::vector<uint256>& leaves, uint256* proot
         // If we reach this point, h is an inner value that is not the top.
         // We combine it with itself (Bitcoin's special rule for odd levels in
         // the tree) to produce a higher level one.
-        if (pbranch && matchh) {
+        if (fMutable && pbranch && matchh) {
             pbranch->push_back(h);
         }
         if (fMutable) {
